@@ -1,5 +1,5 @@
 import Index from "../index.html";
-import { getRenderedPage, Models, Providers, renderDocument } from "./render";
+import { getRenderedPage, Models, Providers, ProvidersV2, renderDocument } from "./render";
 import {
   filterCatalogByModelType,
   filterModelsByModelType,
@@ -106,6 +106,12 @@ Bun.serve({
         },
       });
     },
+    "/experimental/v2.0/api.json": () =>
+      Response.json(ProvidersV2, {
+        headers: {
+          "Cache-Control": "public, max-age=3600",
+        },
+      }),
     "/api.json": (req) => catalogResponse(req, "api"),
     "/models.json": (req) => catalogResponse(req, "models"),
     "/catalog.json": (req) => catalogResponse(req, "catalog"),

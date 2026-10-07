@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { RenderedPages, Providers, Models, renderDocument } from "../src/render";
+import { RenderedPages, Providers, ProvidersV2, Models, renderDocument } from "../src/render";
 import {
   filterCatalogByModelType,
   MODEL_TYPES,
@@ -92,5 +92,7 @@ for (const [suffix, filter] of variants) {
   await Bun.write(`./dist/_models${suffix}.json`, JSON.stringify(filtered.models));
   await Bun.write(`./dist/_catalog${suffix}.json`, JSON.stringify(filtered));
 }
+
+await Bun.write("./dist/_experimental_v2.0_api.json", JSON.stringify(ProvidersV2));
 
 await fs.rm("./dist/index.html", { force: true });
