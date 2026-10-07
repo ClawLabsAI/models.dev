@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
 import { inferKimiFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveCanonicalBaseModel } from "./openrouter.js";
 
@@ -483,7 +484,15 @@ export function buildDigitalOceanModel(
   const modelStatus = status(model.lifecycle_status, existing?.status);
   const releaseDate = existing?.release_date ?? model.created_at?.slice(0, 10) ?? new Date().toISOString().slice(0, 10);
   const attachment = input.some((value) => value !== "text");
+  const type = inferAuthoredModelType({
+    id: model.id,
+    rawType: model.type,
+    input,
+    output,
+    existingType: existing?.type,
+  });
   const values: Partial<SyncedFullModel> = {
+    type,
     name: model.name,
     description: existing?.description ?? describeModel({
       id: model.id,

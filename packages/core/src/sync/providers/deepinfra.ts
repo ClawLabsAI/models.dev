@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveCanonicalBaseModel } from "./openrouter.js";
 
@@ -318,6 +319,13 @@ export function buildDeepInfraModel(
       : existing?.status;
 
   const values: Partial<SyncedFullModel> = {
+    type: inferAuthoredModelType({
+      id: model.model_name,
+      rawType: model.type,
+      input: inputModalities,
+      output: modalities?.output,
+      existingType: existing?.type,
+    }),
     // For base_model entries the display name is inherited from `models/`;
     // deriveName is only a fallback for standalone full definitions.
     name: existing?.name ?? (baseModel !== undefined ? undefined : deriveName(model.model_name)),

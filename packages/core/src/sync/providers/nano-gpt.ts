@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { inferKimiFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveModelMetadataBaseModel } from "./openrouter.js";
 
@@ -145,6 +146,12 @@ export function buildNanoGptModel(
     : capabilities.reasoning ?? (model.reasoning_efforts != null ? true : undefined);
   const reasoning = inferredSourceReasoning ?? existing?.reasoning ?? false;
   const cost = buildCost(model.pricing, existing);
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input: hasInputMetadata || existing !== undefined ? input : undefined,
+    output: hasOutputMetadata || existing !== undefined ? output : undefined,
+    existingType: existing?.type,
+  });
   if (baseModel !== undefined) {
     const existingAlreadyFactored = existing?.base_model === baseModel;
     const factoredModalities = {
@@ -162,6 +169,7 @@ export function buildNanoGptModel(
     return factorBaseModel(
       baseModel,
       {
+        type,
         name: existing?.name ?? model.name ?? undefined,
         description: existingAlreadyFactored ? existing?.description : undefined,
         family: existingAlreadyFactored ? existing?.family : undefined,
@@ -194,6 +202,7 @@ export function buildNanoGptModel(
   }
 
   const values = {
+    ...(type === undefined ? {} : { type }),
     name: existing?.name ?? model.name ?? humanizeModelName(model.id),
     description: existing?.description ?? model.description ?? `${model.name ?? humanizeModelName(model.id)} on NanoGPT.`,
     family: existing?.family ?? inferFamily(model.id, model.name ?? ""),

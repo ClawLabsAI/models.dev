@@ -3,6 +3,7 @@ import path from "node:path";
 import { z } from "zod";
 
 import { ModelFamily } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import { ReasoningOption as CatalogReasoningOption } from "../../schema.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { MissingReasoningOptionsError } from "../missing-reasoning-options.js";
@@ -56,6 +57,7 @@ const FeedCostTier = z
 export const AiandModel = z
   .object({
     id: z.string().min(1),
+    type: z.string().min(1).optional(),
     name: z.string().min(1),
     description: z.string().min(1).optional(),
     family: z.string().optional(),
@@ -180,7 +182,17 @@ export function buildAiandModel(
     input: authored?.limit?.input,
     output: model.limit.output,
   };
+  const inputModalities = sortModalities(model.modalities.input.filter(isModality));
+  const outputModalities = sortModalities(model.modalities.output.filter(isModality));
+  const type = inferAuthoredModelType({
+    id: model.id,
+    rawType: model.type,
+    input: inputModalities,
+    output: outputModalities,
+    existingType: authored?.type,
+  });
   const host: HostFields = {
+    ...(type === undefined ? {} : { type }),
     attachment: model.attachment,
     reasoning: model.reasoning,
     // The schema refuses reasoning_options on a non-reasoner; a non-reasoning
@@ -191,8 +203,8 @@ export function buildAiandModel(
     temperature: model.temperature,
     // Canonical order so a feed-side reordering never churns a TOML.
     modalities: {
-      input: sortModalities(model.modalities.input.filter(isModality)),
-      output: sortModalities(model.modalities.output.filter(isModality)),
+      input: inputModalities,
+      output: outputModalities,
     },
     limit,
     cost: {

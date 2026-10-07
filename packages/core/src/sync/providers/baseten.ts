@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type {
   ExistingModel,
   SyncProvider,
@@ -135,6 +136,12 @@ export function buildBasetenModel(
     output: authored?.limit?.output ?? model.max_completion_tokens,
   };
   const values: Partial<SyncedFullModel> = {
+    type: inferAuthoredModelType({
+      id: model.id,
+      input,
+      output,
+      existingType: existing?.type,
+    }),
     name: model.name ?? existing?.name,
     description: existing?.description ?? describeModel({
       id: model.id,

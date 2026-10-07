@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
+import { inferAuthoredModelType } from "../../filter.js";
+import { ModelType } from "../../schema.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -8,6 +10,7 @@ const API_BASE = "https://api.x.ai/v1";
 
 const XAIModel = z.object({
   id: z.string(),
+  type: ModelType.optional(),
   canonical_id: z.string().optional(),
   created: z.number().int().nonnegative(),
   aliases: z.array(z.string()).optional(),
@@ -62,8 +65,8 @@ export const xai = {
 
     const models = await Promise.all([
       fetchTypedModels(key, "language-models"),
-      fetchTypedModels(key, "image-generation-models"),
-      fetchTypedModels(key, "video-generation-models"),
+      fetchTypedModels(key, "image-generation-models", "image"),
+      fetchTypedModels(key, "video-generation-models", "video"),
     ]);
 
     return { models: models.flat() };
@@ -118,7 +121,11 @@ async function assertFullModelAccess(key: string) {
   }
 }
 
-async function fetchTypedModels(key: string, endpoint: string) {
+async function fetchTypedModels(
+  key: string,
+  endpoint: string,
+  type?: z.infer<typeof ModelType>,
+) {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
     headers: { Authorization: `Bearer ${key}` },
   });
@@ -126,7 +133,8 @@ async function fetchTypedModels(key: string, endpoint: string) {
     throw new Error(`xAI ${endpoint} request failed: ${response.status} ${response.statusText}`);
   }
 
-  return XAIModelList.parse(await response.json()).models;
+  const models = XAIModelList.parse(await response.json()).models;
+  return type === undefined ? models : models.map((model) => ({ ...model, type }));
 }
 
 type Modality = "text" | "audio" | "image" | "video" | "pdf";
@@ -213,8 +221,15 @@ export function buildXAIModel(model: XAIModel, existing: ExistingModel): SyncedM
 
   const input = modalities(model.input_modalities, existing.modalities?.input ?? ["text"]);
   const output = modalities(model.output_modalities, existing.modalities?.output ?? ["text"]);
+  const type = model.type ?? inferAuthoredModelType({
+    id: model.id,
+    input,
+    output,
+    existingType: existing.type,
+  });
 
   const values = {
+    ...(type === undefined ? {} : { type }),
     name,
     description: description ?? describeModel({
       id: model.id,

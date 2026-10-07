@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
 import { inferKimiFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -486,11 +487,19 @@ function buildFriendliModel(
   const releaseDate = existing?.release_date ?? new Date(model.created * 1000).toISOString().slice(0, 10);
   const today = new Date().toISOString().slice(0, 10);
   const lastUpdated = existing?.last_updated ?? today;
+  const type = inferAuthoredModelType({
+    id: model.id,
+    rawType: model.mode,
+    input: apiInput,
+    output: apiOutput,
+    existingType: existing?.type,
+  });
 
   if (factorBase !== undefined) {
     return factorBaseModel(
       factorBase,
       {
+        type,
         attachment,
         reasoning,
         reasoning_options: reasoningOptions,
@@ -520,6 +529,7 @@ function buildFriendliModel(
   // entries above leave it unset so the lab's value stands.
   const inlineReasoning = reasoning ?? false;
   return {
+    ...(type === undefined ? {} : { type }),
     name,
     description:
       existing?.description ??

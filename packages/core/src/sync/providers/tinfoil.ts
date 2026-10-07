@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncedFullModel, SyncedModel, SyncProvider } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -103,8 +104,14 @@ export function buildTinfoilModel(
     ...existing.limit,
     context: model.context_window ?? existing.limit.context,
   };
+  const type = inferAuthoredModelType({
+    id: model.id,
+    rawType: model.type,
+    existingType: existing.type,
+  });
   const values = {
     ...current,
+    ...(type === undefined ? {} : { type }),
     reasoning: model.reasoning,
     reasoning_options: model.reasoning ? existing.reasoning_options : undefined,
     cost,

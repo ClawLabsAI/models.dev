@@ -142,7 +142,7 @@ export function buildVercelModel(
   const reasoning = existing?.reasoning ?? tags.has("reasoning");
 
   const synced: SyncedFullModel = {
-    type: model.type === "evaluation" ? "decision" : existing?.type,
+    type: vercelModelType(model.type, existing?.type),
     name: existing?.name ?? model.name,
     description: model.type === "evaluation"
       ? existing?.description ?? model.description ?? "Decision model for typed evaluation of shared state"
@@ -242,6 +242,28 @@ export function buildVercelModel(
     limit: synced.limit,
     modalities: synced.modalities,
   }, synced.limit, existing?.base_model_omit);
+}
+
+function vercelModelType(
+  type: string,
+  existingType: ExistingModel["type"],
+): SyncedFullModel["type"] {
+  switch (type) {
+    case "language":
+      return existingType;
+    case "evaluation":
+      return "decision";
+    case "embedding":
+    case "image":
+    case "video":
+    case "reranking":
+    case "transcription":
+    case "speech":
+    case "realtime":
+      return type;
+    default:
+      return existingType;
+  }
 }
 
 function vercelReasoningOptions(

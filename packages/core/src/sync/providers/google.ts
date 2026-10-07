@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -146,17 +147,25 @@ export function buildGoogleModel(model: GoogleModel, existing: ExistingModel): S
     throw new Error(`Google model ${model.name} has incomplete local TOML metadata required for sync`);
   }
 
+  const modelID = model.name.replace(/^models\//, "");
   const syncedLimit = {
     input: limit.input,
     context: model.inputTokenLimit,
     output: model.outputTokenLimit,
-    ...DOCUMENTED_LIMIT_OVERRIDES[model.name.replace(/^models\//, "")],
+    ...DOCUMENTED_LIMIT_OVERRIDES[modelID],
   };
+  const type = inferAuthoredModelType({
+    id: modelID,
+    input: modalities.input,
+    output: modalities.output,
+    existingType: existing.type,
+  });
 
   const synced: SyncedFullModel = {
+    ...(type === undefined ? {} : { type }),
     name: model.displayName ?? name,
     description: description ?? model.description ?? describeModel({
-      id: model.name.replace(/^models\//, ""),
+      id: modelID,
       name: model.displayName ?? name,
       family: existing.family,
       reasoning: model.thinking ?? reasoning,

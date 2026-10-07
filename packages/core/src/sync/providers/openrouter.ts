@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { describeModel } from "../../describe.js";
 import { inferKimiFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 
 const API_ENDPOINT = "https://openrouter.ai/api/v1/models";
@@ -217,6 +218,12 @@ export function buildOpenRouterModel(
   const name = model.name.replace(/^[^:]+:\s+/, "");
   const input = modalities(model.architecture.input_modalities, ["text"]);
   const output = modalities(model.architecture.output_modalities, ["text"]);
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input,
+    output,
+    existingType: existing?.type,
+  });
   const prompt = price(model.pricing.prompt);
   const completion = price(model.pricing.completion);
   const reasoning = params.has("reasoning") || params.has("include_reasoning");
@@ -262,6 +269,7 @@ export function buildOpenRouterModel(
     return factorBaseModel(
       canonical,
       {
+        type,
         name: shouldPreserveFactoredName(model.id, canonical, baseModel, canonicalOverride)
           ? name
           : undefined,
@@ -294,6 +302,7 @@ export function buildOpenRouterModel(
   }
 
   return {
+    ...(type === undefined ? {} : { type }),
     name,
     description: existing?.description ?? describeModel({
       id: model.id,

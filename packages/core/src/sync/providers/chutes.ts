@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
 import { inferKimiFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -116,7 +117,15 @@ export function buildChutesModel(
       }
     : existing?.cost;
 
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input,
+    output,
+    existingType: existing?.type,
+  });
+
   const values: SyncedFullModel = {
+    ...(type === undefined ? {} : { type }),
     name,
     description: existing?.description ?? describeModel({
       id: model.id,

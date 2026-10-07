@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedModel } from "../index.js";
 
 const API_ENDPOINT = "https://api.ofox.ai/v2/models/catalog?include=provider_price&limit=500";
@@ -119,9 +120,15 @@ export function buildOfoxModel(model: OfoxModel, authored: ExistingModel): Synce
       : authored.cost;
 
   const status = model.is_deprecated === true ? ("deprecated" as const) : authored.status;
+  const type = inferAuthoredModelType({
+    id: model.id,
+    rawType: model.mode,
+    existingType: authored.type,
+  });
 
   return {
     ...preserved,
+    ...(type === undefined ? {} : { type }),
     cost,
     status,
   } as SyncedModel;

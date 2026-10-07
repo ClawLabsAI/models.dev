@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -355,7 +356,14 @@ export function buildFireworksModel(
     ? limit.context
     : Math.min(limit.context, model.context_length);
   const output = Math.min(limit.output, context);
+  const type = inferAuthoredModelType({
+    id: model.catalogId,
+    input,
+    output: outputModalities,
+    existingType: existing.type,
+  });
   const values = {
+    ...(type === undefined ? {} : { type }),
     name,
     description,
     family: existing.family,

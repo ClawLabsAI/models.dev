@@ -362,9 +362,10 @@ export async function syncProvider<SourceModel>(
     const withDescription = provider.preserveDescriptions === false
       ? withReasoningOptions
       : preserveDescription(withReasoningOptions, existing.get(relativePath)?.authored);
+    const withType = preserveModelType(withDescription, existing.get(relativePath)?.authored);
     const parsed = SyncedAuthoredModel.safeParse(stripUndefined({
       id: translated.id,
-      ...withDescription,
+      ...withType,
     }));
     if (!parsed.success) {
       parsed.error.cause = { provider: provider.id, path: relativePath };
@@ -568,6 +569,12 @@ export function preserveDescription(model: SyncedModel, existing: ExistingModel 
   if (model.description !== undefined) return model;
   if (existing?.description === undefined) return model;
   return { ...model, description: existing.description } as SyncedModel;
+}
+
+export function preserveModelType(model: SyncedModel, existing: ExistingModel | undefined): SyncedModel {
+  if (model.type !== undefined) return model;
+  if (existing?.type === undefined) return model;
+  return { ...model, type: existing.type } as SyncedModel;
 }
 
 export function preserveReasoningOptions(

@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import { z } from "zod";
 
 import { inferKimiFamily, ModelFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import { ReasoningOption } from "../../schema.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
@@ -139,7 +140,20 @@ export function buildWandbModel(
     context: model.limit?.context ?? existing?.limit?.context ?? 0,
     output: model.limit?.output ?? existing?.limit?.output ?? 0,
   };
+  const resolvedInput = inputModalities.length > 0
+    ? inputModalities
+    : existing?.modalities?.input ?? ["text"];
+  const resolvedOutput = outputModalities.length > 0
+    ? outputModalities
+    : existing?.modalities?.output ?? ["text"];
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input: resolvedInput,
+    output: resolvedOutput,
+    existingType: existing?.type,
+  });
   const synced: SyncedFullModel = {
+    ...(type === undefined ? {} : { type }),
     name: normalizeName(model),
     description: model.description ?? existing?.description,
     family: resolveFamily(model),
@@ -163,12 +177,8 @@ export function buildWandbModel(
     cost: buildCost(model.cost, existing?.cost),
     limit,
     modalities: {
-      input: inputModalities.length > 0
-        ? inputModalities
-        : existing?.modalities?.input ?? ["text"],
-      output: outputModalities.length > 0
-        ? outputModalities
-        : existing?.modalities?.output ?? ["text"],
+      input: resolvedInput,
+      output: resolvedOutput,
     },
   };
 

@@ -210,8 +210,8 @@ export function buildWorkersAiModel(
     existingWithReasoningOptions,
     existing?.base_model ?? resolveCloudflareBaseModel(model),
   );
-  const type = DECISION_MODELS.has(model.id) ? "decision" : existing?.type;
-  const typed = type === undefined ? synced : { ...synced, type: "decision" as const };
+  const type = DECISION_MODELS.has(model.id) ? "decision" : synced.type ?? existing?.type;
+  const typed = type === undefined ? synced : { ...synced, type };
   if ("base_model" in typed) return typed;
   return {
     ...typed,

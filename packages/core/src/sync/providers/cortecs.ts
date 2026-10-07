@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveModelMetadataBaseModel } from "./openrouter.js";
 
@@ -89,6 +90,12 @@ export function buildCortecsModel(
   const features = new Set(model.supported_features);
   const input = model.input_modalities;
   const output = model.output_modalities;
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input,
+    output,
+    existingType: existing?.type,
+  });
   const canonical = existing?.base_model ?? resolveCortecsBaseModel(model.id);
   const sourceReasoning = features.has("reasoning");
   const reasoning = canonical === undefined ? sourceReasoning : existing?.reasoning ?? sourceReasoning;
@@ -110,6 +117,7 @@ export function buildCortecsModel(
   };
   if (canonical !== undefined) {
     return factorBaseModel(canonical, {
+      type,
       description: existing?.description,
       attachment: input.some((value) => value !== "text"),
       reasoning,
@@ -127,6 +135,7 @@ export function buildCortecsModel(
 
   const family = existing?.family;
   return {
+    ...(type === undefined ? {} : { type }),
     name: existing?.name ?? model.id,
     description: existing?.description ?? model.description ?? describeModel({
       id: model.id,

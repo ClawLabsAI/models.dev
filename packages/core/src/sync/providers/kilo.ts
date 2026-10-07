@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { describeModel } from "../../describe.js";
 import { inferKimiFamily, ModelFamilyValues } from "../../family.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveCanonicalBaseModel } from "./openrouter.js";
 
@@ -148,6 +149,12 @@ export function buildKiloModel(
   const apiDescription = model.description?.replaceAll(/\s+/g, " ").trim();
   const input = modalities(model.architecture.input_modalities, ["text"]);
   const output = modalities(model.architecture.output_modalities, ["text"]);
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input,
+    output,
+    existingType: existing?.type,
+  });
   const prompt = price(model.pricing.prompt);
   const completion = price(model.pricing.completion);
   const reasoning = params.has("reasoning") || params.has("include_reasoning");
@@ -186,6 +193,7 @@ export function buildKiloModel(
     return factorBaseModel(
       canonical,
       {
+        type,
         name: baseModel !== undefined || model.id.endsWith(":free") ? name : undefined,
         description: existing?.description ?? apiDescription ?? describeModel({
           id: model.id,
@@ -216,6 +224,7 @@ export function buildKiloModel(
   }
 
   return {
+    ...(type === undefined ? {} : { type }),
     name,
     description: existing?.description ?? apiDescription ?? describeModel({
       id: model.id,

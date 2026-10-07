@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveCanonicalBaseModel, resolveModelMetadataBaseModel } from "./openrouter.js";
 
@@ -339,6 +340,13 @@ export function buildEmpiriolabsModel(
     output: outputTokens,
   };
   const values: Partial<SyncedFullModel> = {
+    type: inferAuthoredModelType({
+      id: model.id,
+      rawType: model.category,
+      input,
+      output,
+      existingType: existing?.type,
+    }),
     name: model.display_name ?? model.name ?? model.id,
     description: baseModel === undefined ? existing?.description ?? model.description : existing?.description,
     family: existing?.family,

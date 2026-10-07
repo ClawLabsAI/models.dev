@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedModel } from "../index.js";
 
 const API_ENDPOINT = "https://catalog.endpoints.ai.ovh.net/rest/v2/openrouter";
@@ -110,9 +111,17 @@ export function buildOvhcloudModel(
     cache_write: cacheWrite !== undefined && cacheWrite > 0 ? cacheWrite : undefined,
   };
 
+  const type = inferAuthoredModelType({
+    id: model.id,
+    input,
+    output,
+    existingType: existing?.type,
+  });
+
   return {
     base_model: existing?.base_model,
     base_model_omit: existing?.base_model_omit,
+    ...(type === undefined ? {} : { type }),
     name: model.name,
     description: existing?.description ?? describeModel({
       id: model.id,

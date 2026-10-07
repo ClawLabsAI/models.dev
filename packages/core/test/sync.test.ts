@@ -1524,6 +1524,7 @@ test("syncs existing DigitalOcean image models with catalog output limits", () =
   });
 
   expect(translated?.model).toMatchObject({
+    type: "image",
     cost: { input: 6, output: 12 },
     limit: { context: 0, output: 16_384 },
   });
@@ -4776,6 +4777,35 @@ test("Vercel sync accepts evaluation and unknown future model types", () => {
   expect(buildVercelModel(future!, undefined).type).toBeUndefined();
 });
 
+test("Vercel sync maps all specialized catalog model types", () => {
+  const cases = [
+    ["embedding", "embedding"],
+    ["image", "image"],
+    ["video", "video"],
+    ["reranking", "reranking"],
+    ["transcription", "transcription"],
+    ["speech", "speech"],
+    ["realtime", "realtime"],
+    ["evaluation", "decision"],
+    ["language", undefined],
+  ] as const;
+
+  const models = vercel.parseModels({
+    data: cases.map(([type], index) => ({
+      id: `example/${type}-${index}`,
+      name: `Example ${type}`,
+      created: 1_755_815_280,
+      context_window: 8_000,
+      max_tokens: 4_000,
+      type,
+    })),
+  });
+
+  expect(models.map((model) => buildVercelModel(model, undefined).type)).toEqual(
+    cases.map(([, expected]) => expected),
+  );
+});
+
 test("Vercel sync preserves Liquid d1 as a decision model via its lab metadata", () => {
   const [model] = vercel.parseModels({
     data: [{
@@ -5213,6 +5243,55 @@ test("maps EmpirioLabs aliases to canonical model metadata", () => {
   expect(resolveEmpiriolabsBaseModel("seed-2-0-code")).toBe("bytedance-seed/seed-2.0-code");
   expect(resolveEmpiriolabsBaseModel("muse-spark-1-1")).toBe("meta/muse-spark-1.1");
   expect(resolveEmpiriolabsBaseModel("step-3-5-flash")).toBe("stepfun/step-3.5-flash");
+});
+
+test("maps specialized model types across xAI, Tinfoil, and OpenRouter syncs", () => {
+  const xaiImage = buildXAIModel(
+    {
+      id: "grok-imagine-image",
+      type: "image",
+      created: Date.parse("2026-06-29T00:00:00Z") / 1000,
+      input_modalities: ["text", "image"],
+      output_modalities: ["image"],
+    },
+    {
+      name: "Grok Imagine Image",
+      description: "xAI image generation model",
+      release_date: "2026-06-29",
+      last_updated: "2026-06-29",
+      attachment: true,
+      reasoning: false,
+      tool_call: false,
+      open_weights: false,
+      cost: { input: 1, output: 2 },
+      limit: { context: 4_096, output: 0 },
+      modalities: { input: ["text", "image"], output: ["image"] },
+    },
+  );
+  expect(xaiImage.type).toBe("image");
+
+  const tinfoilEmbedding = buildTinfoilModel(
+    tinfoilModel({ id: "nomic-embed-text", type: "embedding", reasoning: false }),
+    {
+      ...existingTinfoilGLM,
+      base_model: undefined,
+      reasoning: false,
+      reasoning_options: undefined,
+    },
+  );
+  expect(tinfoilEmbedding.type).toBe("embedding");
+
+  const openRouterImage = buildOpenRouterModel(
+    openRouterModel({
+      id: "custom/flux-image",
+      name: "Custom: Flux Image",
+      architecture: { input_modalities: ["text"], output_modalities: ["image"] },
+      supported_parameters: ["temperature"],
+      reasoning: undefined,
+    }),
+    undefined,
+  );
+  expect(openRouterImage.type).toBe("image");
 });
 
 function unavailableStub(): OpenRouterModel {

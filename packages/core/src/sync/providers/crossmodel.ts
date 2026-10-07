@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedModel } from "../index.js";
 import { factorBaseModel } from "./openrouter.js";
 
@@ -244,6 +245,12 @@ export function buildCrossModel(
   return factorBaseModel(
     baseModel,
     {
+      type: inferAuthoredModelType({
+        id: model.id,
+        input: modality.input,
+        output: modality.output,
+        existingType: existing?.type,
+      }),
       attachment: existing?.attachment,
       reasoning: existing?.reasoning,
       temperature: existing?.temperature,

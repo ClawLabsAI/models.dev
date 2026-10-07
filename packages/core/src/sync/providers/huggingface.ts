@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { describeModel } from "../../describe.js";
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import { factorBaseModel, resolveCanonicalBaseModel } from "./openrouter.js";
 
@@ -196,6 +197,12 @@ export function buildHuggingFaceModel(
     output: existing?.limit?.output,
   } as SyncedFullModel["limit"];
   const values: Partial<SyncedFullModel> = {
+    type: inferAuthoredModelType({
+      id: model.id,
+      input,
+      output,
+      existingType: existing?.type,
+    }),
     name: existing?.name,
     description: existing?.description ?? describeModel({
       id: model.id,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { ModelFamily, ModelFamilyValues } from "./family.js";
+import { MODEL_TYPES } from "./filter.js";
 import { DateString, JsonValue } from "./schema.js";
 
 /**
@@ -20,17 +21,7 @@ function openEnum<const T extends readonly [string, ...string[]]>(values: T) {
   return z.union([z.enum(values), z.string() as z.ZodType<string & {}>]);
 }
 
-export const ModelTypeV2Values = [
-  "chat",
-  "image",
-  "video",
-  "embedding",
-  "reranking",
-  "decision",
-  "transcription",
-  "speech",
-  "realtime",
-] as const;
+export const ModelTypeV2Values = MODEL_TYPES;
 
 export const KnownModelTypeV2 = z.enum(ModelTypeV2Values);
 export const ModelTypeV2 = openEnum(ModelTypeV2Values);

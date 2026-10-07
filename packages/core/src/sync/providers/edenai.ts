@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { z } from "zod";
 
+import { inferAuthoredModelType } from "../../filter.js";
 import type { ExistingModel, SyncProvider, SyncedFullModel, SyncedModel } from "../index.js";
 import {
   factorBaseModel,
@@ -526,6 +527,12 @@ export function buildEdenAIModel(
   return factorBaseModel(
     baseModel,
     {
+      type: inferAuthoredModelType({
+        id: model.id,
+        input,
+        output,
+        existingType: existing?.type,
+      }),
       name: displayName(model, baseModel),
       modalities,
       attachment: input?.some((value) => value !== "text"),
