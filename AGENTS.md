@@ -53,7 +53,7 @@ If you can name the lab model, it belongs in `models/` and the host uses `base_m
 
 After `base_model = "…"`, write **only** provider-specific fields or values that **differ** from the base. Never restate identical data.
 
-**Do not copy from base when unchanged:** `name`, `description`, `family`, `release_date`, `knowledge`, `open_weights`, `attachment`, `reasoning`, `tool_call`, `temperature`, `structured_output`, matching `[modalities]` / `[limit]`, etc.
+**Do not copy from base when unchanged:** `name`, `description`, `type`, `family`, `release_date`, `knowledge`, `open_weights`, `attachment`, `reasoning`, `tool_call`, `temperature`, `structured_output`, matching `[modalities]` / `[limit]`, etc.
 
 **Usually provider-authored:** `cost`, `reasoning_options`, `interleaved`, `status`, `provider`, `experimental`, plus real deltas (smaller context, PDF-only input, different display `name`).
 
@@ -113,6 +113,7 @@ If the provider has a rich catalog API that can populate model data or authorita
 | Field | Notes |
 | --- | --- |
 | `name`, `description` | Schema-required |
+| `type` | **Required on specialized (non-chat) models:** `"image"`, `"video"`, `"embedding"`, `"reranking"`, `"decision"`, `"transcription"`, `"speech"`, `"realtime"` (optional `"chat"` for standard chat models) |
 | `release_date`, `last_updated` | **Required on new lab entries** (hosts inherit these) |
 | `attachment`, `reasoning`, `tool_call`, `open_weights` | **Required on new lab entries** |
 | `limit`, `modalities` | **Required on new lab entries** — providers must resolve `limit.context` + `limit.output` |
@@ -126,6 +127,7 @@ After `base_model` merge (or full inline), the provider model must have:
 | Field | Notes |
 | --- | --- |
 | `name`, `description` | From base or local |
+| `type` | From base or local; required for non-chat models (`image`, `video`, `embedding`, `reranking`, `decision`, `transcription`, `speech`, `realtime`) |
 | `attachment`, `reasoning`, `tool_call`, `open_weights` | Booleans |
 | `release_date`, `last_updated` | Dates |
 | `modalities`, `limit` | `limit.context` + `limit.output` required on providers |
@@ -262,6 +264,7 @@ reasoning_options = [{ type = "effort", values = ["none", "low", "medium", "high
 - [ ] New provider has compliant `logo.svg`
 - [ ] Non-lab hosts use `base_model`; missing lab metadata was **added** under `models/` when needed (complete lab file, not a stub)
 - [ ] Provider `base_model` files are override-only (no duplicated identical fields; no provider-only keys under `models/`)
+- [ ] Specialized non-chat models (`image`, `video`, `embedding`, `reranking`, `decision`, `transcription`, `speech`, `realtime`) set `type` on the lab metadata (or standalone provider file)
 - [ ] `reasoning = true` ⇒ `reasoning_options` set per policy above
 - [ ] Costs are USD/MTok
 - [ ] `bun validate` passes
