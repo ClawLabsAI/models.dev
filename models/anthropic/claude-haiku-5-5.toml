@@ -1,0 +1,23 @@
+# Specs: https://platform.claude.com/docs/en/models/haiku-5-5/overview
+# Pricing: https://platform.claude.com/docs/en/about-claude/pricing#model-pricing
+# Effort: https://platform.claude.com/docs/en/build-with-claude/effort#recommended-effort-levels-for-claude-haiku-5-5
+# Announcement: https://www.anthropic.com/claude-haiku-5-5
+name = "Claude Haiku 5.5"
+description = "Fastest Claude model for high-volume classification, extraction, routing, and subagent tasks"
+family = "claude-haiku"
+release_date = "2026-10-07"
+last_updated = "2026-10-07"
+attachment = true
+reasoning = true
+temperature = false
+tool_call = true
+knowledge = "2026-06"
+open_weights = false
+
+[limit]
+context = 1_000_000
+output = 128_000
+
+[modalities]
+input = ["text", "image", "pdf"]
+output = ["text"]
